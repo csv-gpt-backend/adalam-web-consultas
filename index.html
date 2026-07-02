@@ -58,6 +58,7 @@
     <button type="button" id="send">Enviar</button>
     <button type="button" id="stopSpeak" class="secondary" hidden>Detener voz</button>
     <label class="check"><input type="checkbox" id="autoSpeak" checked /> Leer respuesta en voz alta</label>
+    <label class="check"><input type="checkbox" id="useWeb" checked /> Buscar en web (enlaces verificados)</label>
   </div>
   <p class="meta" id="status"></p>
   <p class="err" id="error"></p>
@@ -148,13 +149,16 @@
         return;
       }
       btn.disabled = true;
-      status.textContent = "Consultando (puede tardar un minuto)…";
+      status.textContent = "Consultando (CSV + web si aplica; puede tardar más)…";
       out.value = "";
       try {
         const res = await fetch(API + "/ask", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question: q }),
+          body: JSON.stringify({
+            question: q,
+            use_web: document.getElementById("useWeb").checked,
+          }),
         });
         const data = await res.json();
         if (!res.ok) {
@@ -163,7 +167,11 @@
         const answer = data.answer || "";
         out.value = answer;
         status.textContent =
-          "Modelo: " + (data.model || "—") + " · Archivos: " + (data.files_used || []).join(", ");
+          "Modelo: " + (data.model || "—") +
+          " · Archivos: " + (data.files_used || []).join(", ") +
+          (data.web_search_used
+            ? " · Web: " + (data.verified_links?.length || 0) + " verificado(s) de " + (data.web_candidates_found ?? 0) + " encontrado(s)"
+            : "");
         if (document.getElementById("autoSpeak").checked) {
           speakAnswer(answer);
           status.textContent += " · Leyendo en voz alta…";
