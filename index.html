@@ -38,6 +38,12 @@
       cursor: pointer;
     }
     button:disabled { opacity: 0.6; cursor: wait; }
+    button.secondary {
+      background: #5f6368;
+      margin-left: 0.5rem;
+    }
+    .row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.75rem; }
+    .check { font-weight: normal; display: flex; align-items: center; gap: 0.35rem; margin: 0; }
     .meta { font-size: 0.8rem; color: #666; margin-top: 0.5rem; }
     .err { color: #c5221f; margin-top: 0.5rem; white-space: pre-wrap; }
   </style>
@@ -48,7 +54,11 @@
 
   <label for="question">Tu pregunta</label>
   <textarea id="question" placeholder="Ej.: Analiza el paralelo A y sugiere acciones basadas solo en decimo.csv"></textarea>
-  <button type="button" id="send">Enviar</button>
+  <div class="row">
+    <button type="button" id="send">Enviar</button>
+    <button type="button" id="stopSpeak" class="secondary" hidden>Detener voz</button>
+    <label class="check"><input type="checkbox" id="autoSpeak" checked /> Leer respuesta en voz alta</label>
+  </div>
   <p class="meta" id="status"></p>
   <p class="err" id="error"></p>
 
@@ -58,6 +68,72 @@
   <script>
     const API = "https://adalam-api-279160003584.southamerica-east1.run.app";
 
+    let speakQueue = [];
+    let speaking = false;
+
+    function getSpanishVoice() {
+      const voices = speechSynthesis.getVoices();
+      return (
+        voices.find((v) => v.lang.startsWith("es") && v.localService) ||
+        voices.find((v) => v.lang.startsWith("es")) ||
+        voices[0]
+      );
+    }
+
+    if (speechSynthesis.onvoiceschanged !== undefined) {
+      speechSynthesis.onvoiceschanged = () => getSpanishVoice();
+    }
+
+    function stopSpeech() {
+      speakQueue = [];
+      speaking = false;
+      speechSynthesis.cancel();
+      document.getElementById("stopSpeak").hidden = true;
+    }
+
+    function chunkText(text, maxLen) {
+      const parts = text.split(/(?<=[.!?])\s+/);
+      const chunks = [];
+      let buf = "";
+      for (const p of parts) {
+        if ((buf + " " + p).trim().length > maxLen && buf) {
+          chunks.push(buf.trim());
+          buf = p;
+        } else {
+          buf = buf ? buf + " " + p : p;
+        }
+      }
+      if (buf.trim()) chunks.push(buf.trim());
+      return chunks.length ? chunks : [text];
+    }
+
+    function speakNext() {
+      if (!speakQueue.length) {
+        speaking = false;
+        document.getElementById("stopSpeak").hidden = true;
+        return;
+      }
+      speaking = true;
+      document.getElementById("stopSpeak").hidden = false;
+      const u = new SpeechSynthesisUtterance(speakQueue.shift());
+      u.lang = "es-ES";
+      const voice = getSpanishVoice();
+      if (voice) u.voice = voice;
+      u.rate = 1;
+      u.onend = () => speakNext();
+      u.onerror = () => speakNext();
+      speechSynthesis.speak(u);
+    }
+
+    function speakAnswer(text) {
+      if (!text || !window.speechSynthesis) return;
+      stopSpeech();
+      speakQueue = chunkText(text, 320);
+      speakNext();
+    }
+
+    document.getElementById("stopSpeak").addEventListener("click", stopSpeech);
+
     document.getElementById("send").addEventListener("click", async () => {
       const q = document.getElementById("question").value.trim();
       const btn = document.getElementById("send");
@@ -66,6 +142,7 @@
       const out = document.getElementById("answer");
       errEl.textContent = "";
       status.textContent = "";
+      stopSpeech();
       if (!q) {
         errEl.textContent = "Escribe una pregunta.";
         return;
@@ -83,8 +160,14 @@
         if (!res.ok) {
           throw new Error(data.detail || JSON.stringify(data));
         }
-        out.value = data.answer || "";
-        status.textContent = "Modelo: " + (data.model || "—") + " · Archivos: " + (data.files_used || []).join(", ");
+        const answer = data.answer || "";
+        out.value = answer;
+        status.textContent =
+          "Modelo: " + (data.model || "—") + " · Archivos: " + (data.files_used || []).join(", ");
+        if (document.getElementById("autoSpeak").checked) {
+          speakAnswer(answer);
+          status.textContent += " · Leyendo en voz alta…";
+        }
       } catch (e) {
         errEl.textContent = String(e.message || e);
       } finally {
