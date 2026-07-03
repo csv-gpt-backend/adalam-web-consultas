@@ -50,7 +50,7 @@
 </head>
 <body>
   <h1>Adalam Web Consultas</h1>
-  <p class="sub">Solo calificaciones (CSV) + GPT-5. Sin búsqueda web ni YouTube.</p>
+  <p class="sub">Adalam: Cloud Run calcula primero; GPT-5 redacta el informe. YouTube solo si lo pides (video/YouTube).</p>
 
   <label for="question">Tu pregunta</label>
   <textarea id="question" placeholder="Ej.: Analiza el paralelo A y sugiere acciones basadas solo en decimo.csv"></textarea>
@@ -164,7 +164,11 @@
         out.value = answer;
         status.textContent =
           "Modelo: " + (data.model || "—") +
-          " · Archivos: " + (data.files_used || []).join(", ");
+          " · Archivos: " + (data.files_used || []).join(", ") +
+          (data.pipeline ? " · " + data.pipeline : "") +
+          (data.youtube_used && data.youtube_videos?.length
+            ? " · YouTube: " + data.youtube_videos.length
+            : "");
         if (document.getElementById("autoSpeak").checked) {
           speakAnswer(answer);
           status.textContent += " · Leyendo en voz alta…";
