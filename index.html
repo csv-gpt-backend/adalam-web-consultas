@@ -1,184 +1,586 @@
 <!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Adalam Web Consultas</title>
-  <style>
-    * { box-sizing: border-box; }
-    body {
-      font-family: system-ui, Segoe UI, sans-serif;
-      max-width: 720px;
-      margin: 2rem auto;
-      padding: 0 1rem;
-      background: #f6f7f9;
-      color: #1a1a1a;
-    }
-    h1 { font-size: 1.35rem; margin-bottom: 0.25rem; }
-    .sub { color: #555; font-size: 0.9rem; margin-bottom: 1.5rem; }
-    label { display: block; font-weight: 600; margin-bottom: 0.35rem; }
-    textarea {
-      width: 100%;
-      min-height: 120px;
-      padding: 0.75rem;
-      border: 1px solid #ccc;
-      border-radius: 8px;
-      font-size: 1rem;
-      resize: vertical;
-    }
-    #answer { min-height: 220px; background: #fff; }
-    button {
-      margin-top: 0.75rem;
-      padding: 0.65rem 1.25rem;
-      font-size: 1rem;
-      background: #1a73e8;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-    button:disabled { opacity: 0.6; cursor: wait; }
-    button.secondary {
-      background: #5f6368;
-      margin-left: 0.5rem;
-    }
-    .row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.75rem; }
-    .check { font-weight: normal; display: flex; align-items: center; gap: 0.35rem; margin: 0; }
-    .meta { font-size: 0.8rem; color: #666; margin-top: 0.5rem; }
-    .err { color: #c5221f; margin-top: 0.5rem; white-space: pre-wrap; }
-  </style>
-</head>
-<body>
-  <h1>Adalam Web Consultas</h1>
-  <p class="sub">Adalam: Cloud Run calcula primero; GPT-5 redacta el informe. YouTube solo si lo pides (video/YouTube).</p>
 
-  <label for="question">Tu pregunta</label>
-  <textarea id="question" placeholder="Ej.: Analiza el paralelo A y sugiere acciones basadas solo en decimo.csv"></textarea>
-  <div class="row">
-    <button type="button" id="send">Enviar</button>
-    <button type="button" id="stopSpeak" class="secondary" hidden>Detener voz</button>
-    <label class="check"><input type="checkbox" id="autoSpeak" checked /> Leer respuesta en voz alta</label>
+<html lang="es">
+
+<head>
+
+  <meta charset="UTF-8" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+  <title>Adalam — Consultas socioemocionales</title>
+
+  <style>
+
+    * { box-sizing: border-box; }
+
+    body {
+
+      font-family: system-ui, Segoe UI, sans-serif;
+
+      max-width: 820px;
+
+      margin: 1.5rem auto;
+
+      padding: 0 1rem 2rem;
+
+      background: #f0f4f8;
+
+      color: #1a1a1a;
+
+    }
+
+    h1 { font-size: 1.4rem; margin: 0 0 0.35rem; }
+
+    .banner {
+
+      background: #fff;
+
+      border: 1px solid #dadce0;
+
+      border-radius: 10px;
+
+      padding: 0.85rem 1rem;
+
+      margin-bottom: 1rem;
+
+    }
+
+    .tag {
+
+      display: inline-block;
+
+      font-size: 0.75rem;
+
+      font-weight: 700;
+
+      letter-spacing: 0.04em;
+
+      background: #e8f0fe;
+
+      color: #1967d2;
+
+      padding: 0.2rem 0.55rem;
+
+      border-radius: 4px;
+
+      margin-right: 0.35rem;
+
+    }
+
+    .tag.ok { background: #e6f4ea; color: #137333; }
+
+    .tag.warn { background: #fef7e0; color: #b06000; }
+
+    .sub { color: #555; font-size: 0.88rem; line-height: 1.45; margin: 0.35rem 0 0; }
+
+    label { display: block; font-weight: 600; margin-bottom: 0.35rem; margin-top: 1rem; }
+
+    textarea {
+
+      width: 100%;
+
+      min-height: 100px;
+
+      padding: 0.75rem;
+
+      border: 1px solid #ccc;
+
+      border-radius: 8px;
+
+      font-size: 1rem;
+
+      resize: vertical;
+
+    }
+
+    #answer { min-height: 260px; background: #fff; font-size: 0.92rem; line-height: 1.4; }
+
+    button {
+
+      margin-top: 0.75rem;
+
+      padding: 0.65rem 1.25rem;
+
+      font-size: 1rem;
+
+      background: #1a73e8;
+
+      color: #fff;
+
+      border: none;
+
+      border-radius: 8px;
+
+      cursor: pointer;
+
+    }
+
+    button:disabled { opacity: 0.6; cursor: wait; }
+
+    button.secondary { background: #5f6368; margin-left: 0.5rem; }
+
+    button.ghost { background: #fff; color: #1a73e8; border: 1px solid #1a73e8; margin-left: 0; margin-top: 0.35rem; font-size: 0.85rem; padding: 0.4rem 0.65rem; }
+
+    .row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem; margin-top: 0.5rem; }
+
+    .checks { display: flex; flex-direction: column; gap: 0.35rem; margin-top: 0.5rem; }
+
+    .check { font-weight: normal; display: flex; align-items: flex-start; gap: 0.35rem; margin: 0; font-size: 0.9rem; }
+
+    .examples { margin-top: 0.5rem; }
+
+    .meta { font-size: 0.82rem; color: #444; margin-top: 0.5rem; line-height: 1.5; }
+
+    .err { color: #c5221f; margin-top: 0.5rem; white-space: pre-wrap; }
+
+    .skills { font-size: 0.78rem; color: #666; max-height: 4.5rem; overflow-y: auto; margin-top: 0.35rem; }
+
+  </style>
+
+</head>
+
+<body>
+
+  <h1>Adalam — Consultas</h1>
+
+
+
+  <div class="banner" id="evalBanner">
+
+    <span class="tag" id="evalTag">…</span>
+
+    <span class="tag" id="csvTag">CSV</span>
+
+    <span class="tag" id="apiTag">API</span>
+
+    <p class="sub" id="evalDesc">Cargando datos desde Cloud Run…</p>
+
+    <p class="skills" id="skillsList" hidden></p>
+
   </div>
+
+
+
+  <label for="question">Tu pregunta (lenguaje natural)</label>
+
+  <textarea id="question" placeholder="Ej.: Promedio de AUTOESTIMA · Correlación SENSIBILIDAD EMPÁTICA y AGRESIÓN · Ranking stanines"></textarea>
+
+
+
+  <div class="examples">
+
+    <button type="button" class="ghost" data-q="Promedio y desviación de AUTOESTIMA en décimo">Descriptiva AUTOESTIMA</button>
+
+    <button type="button" class="ghost" data-q="Correlación Pearson y Spearman entre SENSIBILIDAD EMPÁTICA y AGRESIÓN">Correlación</button>
+
+    <button type="button" class="ghost" data-q="Ranking y stanines de AUTOESTIMA">Ranking / stanines</button>
+
+  </div>
+
+
+
+  <div class="checks">
+
+    <label class="check"><input type="checkbox" id="cloudOnly" checked /> Preferir respuesta solo Cloud (estadística; <strong>no consume tokens GPT</strong>)</label>
+
+    <label class="check"><input type="checkbox" id="forceGpt" /> Forzar informe GPT (recomendaciones narrativas — <strong>sí consume tokens</strong>)</label>
+
+    <label class="check"><input type="checkbox" id="autoSpeak" /> Leer respuesta en voz alta</label>
+
+  </div>
+
+
+
+  <div class="row">
+
+    <button type="button" id="send">Consultar</button>
+
+    <button type="button" id="reload" class="secondary">Recargar CSV</button>
+
+    <button type="button" id="stopSpeak" class="secondary" hidden>Detener voz</button>
+
+  </div>
+
   <p class="meta" id="status"></p>
+
   <p class="err" id="error"></p>
 
-  <label for="answer" style="margin-top:1.25rem">Respuesta</label>
+
+
+  <label for="answer">Respuesta</label>
+
   <textarea id="answer" readonly placeholder="La respuesta aparecerá aquí…"></textarea>
 
+
+
   <script>
+
     const API = "https://adalam-api-279160003584.southamerica-east1.run.app";
 
+
+
     let speakQueue = [];
+
     let speaking = false;
 
+
+
+    document.querySelectorAll("[data-q]").forEach((btn) => {
+
+      btn.addEventListener("click", () => {
+
+        document.getElementById("question").value = btn.getAttribute("data-q");
+
+      });
+
+    });
+
+
+
+    document.getElementById("forceGpt").addEventListener("change", (e) => {
+
+      if (e.target.checked) document.getElementById("cloudOnly").checked = false;
+
+    });
+
+    document.getElementById("cloudOnly").addEventListener("change", (e) => {
+
+      if (e.target.checked) document.getElementById("forceGpt").checked = false;
+
+    });
+
+
+
+    async function loadContext() {
+
+      const tag = document.getElementById("evalTag");
+
+      const csvTag = document.getElementById("csvTag");
+
+      const apiTag = document.getElementById("apiTag");
+
+      const desc = document.getElementById("evalDesc");
+
+      const skills = document.getElementById("skillsList");
+
+      try {
+
+        const [health, files] = await Promise.all([
+
+          fetch(API + "/health").then((r) => r.json()),
+
+          fetch(API + "/files").then((r) => r.json()),
+
+        ]);
+
+        apiTag.textContent = "API v" + (health.version || "?");
+
+        apiTag.className = "tag ok";
+
+        const val = (files.validation || [])[0];
+
+        const etiqueta = val?.evaluacion_etiqueta || "SOCIOEMOCIONAL";
+
+        tag.textContent = etiqueta;
+
+        tag.className = val?.ok ? "tag ok" : "tag warn";
+
+        csvTag.textContent = (files.files || []).join(", ") || "sin CSV";
+
+        csvTag.className = files.count ? "tag ok" : "tag warn";
+
+        desc.textContent =
+
+          (val?.evaluacion_label || "Evaluación socioemocional") +
+
+          " · " +
+
+          (val?.row_count ?? "?") +
+
+          " estudiantes · validación " +
+
+          (val?.ok ? "OK" : "revisar columnas");
+
+        const sk = val?.skill_columns_expected || [];
+
+        if (sk.length) {
+
+          skills.hidden = false;
+
+          skills.textContent = "18 habilidades: " + sk.join(" · ");
+
+        }
+
+      } catch (e) {
+
+        desc.textContent = "No se pudo conectar con la API. " + e.message;
+
+        tag.textContent = "OFFLINE";
+
+        tag.className = "tag warn";
+
+      }
+
+    }
+
+
+
     function getSpanishVoice() {
+
       const voices = speechSynthesis.getVoices();
+
       return (
+
         voices.find((v) => v.lang.startsWith("es") && v.localService) ||
+
         voices.find((v) => v.lang.startsWith("es")) ||
+
         voices[0]
+
       );
+
     }
 
     if (speechSynthesis.onvoiceschanged !== undefined) {
+
       speechSynthesis.onvoiceschanged = () => getSpanishVoice();
+
     }
+
+
 
     function stopSpeech() {
+
       speakQueue = [];
+
       speaking = false;
+
       speechSynthesis.cancel();
+
       document.getElementById("stopSpeak").hidden = true;
+
     }
+
+
 
     function chunkText(text, maxLen) {
+
       const parts = text.split(/(?<=[.!?])\s+/);
+
       const chunks = [];
+
       let buf = "";
+
       for (const p of parts) {
+
         if ((buf + " " + p).trim().length > maxLen && buf) {
+
           chunks.push(buf.trim());
+
           buf = p;
-        } else {
-          buf = buf ? buf + " " + p : p;
-        }
+
+        } else buf = buf ? buf + " " + p : p;
+
       }
+
       if (buf.trim()) chunks.push(buf.trim());
+
       return chunks.length ? chunks : [text];
+
     }
+
+
 
     function speakNext() {
+
       if (!speakQueue.length) {
+
         speaking = false;
+
         document.getElementById("stopSpeak").hidden = true;
+
         return;
+
       }
+
       speaking = true;
+
       document.getElementById("stopSpeak").hidden = false;
+
       const u = new SpeechSynthesisUtterance(speakQueue.shift());
+
       u.lang = "es-ES";
+
       const voice = getSpanishVoice();
+
       if (voice) u.voice = voice;
-      u.rate = 1;
+
       u.onend = () => speakNext();
+
       u.onerror = () => speakNext();
+
       speechSynthesis.speak(u);
+
     }
 
+
+
     function speakAnswer(text) {
+
       if (!text || !window.speechSynthesis) return;
+
       stopSpeech();
+
       speakQueue = chunkText(text, 320);
+
       speakNext();
+
     }
+
+
 
     document.getElementById("stopSpeak").addEventListener("click", stopSpeech);
 
-    document.getElementById("send").addEventListener("click", async () => {
-      const q = document.getElementById("question").value.trim();
-      const btn = document.getElementById("send");
-      const status = document.getElementById("status");
-      const errEl = document.getElementById("error");
-      const out = document.getElementById("answer");
-      errEl.textContent = "";
-      status.textContent = "";
-      stopSpeech();
-      if (!q) {
-        errEl.textContent = "Escribe una pregunta.";
-        return;
-      }
-      btn.disabled = true;
-      status.textContent = "Consultando (CSV + GPT-5; puede tardar un minuto)…";
-      out.value = "";
-      try {
-        const res = await fetch(API + "/ask", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ question: q }),
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.detail || JSON.stringify(data));
-        }
-        const answer = data.answer || "";
-        out.value = answer;
-        status.textContent =
-          "Modelo: " + (data.model || "—") +
-          " · Archivos: " + (data.files_used || []).join(", ") +
-          (data.pipeline ? " · " + data.pipeline : "") +
-          (data.youtube_used && data.youtube_videos?.length
-            ? " · YouTube: " + data.youtube_videos.length
-            : "");
-        if (document.getElementById("autoSpeak").checked) {
-          speakAnswer(answer);
-          status.textContent += " · Leyendo en voz alta…";
-        }
-      } catch (e) {
-        errEl.textContent = String(e.message || e);
-      } finally {
-        btn.disabled = false;
-      }
+
+
+    document.getElementById("reload").addEventListener("click", async () => {
+
+      document.getElementById("status").textContent = "Recargando CSV…";
+
+      await fetch(API + "/reload", { method: "POST" });
+
+      await loadContext();
+
+      document.getElementById("status").textContent = "CSV recargado.";
+
     });
+
+
+
+    document.getElementById("send").addEventListener("click", async () => {
+
+      let q = document.getElementById("question").value.trim();
+
+      const btn = document.getElementById("send");
+
+      const status = document.getElementById("status");
+
+      const errEl = document.getElementById("error");
+
+      const out = document.getElementById("answer");
+
+      const forceGpt = document.getElementById("forceGpt").checked;
+
+      const cloudOnly = document.getElementById("cloudOnly").checked;
+
+      errEl.textContent = "";
+
+      status.textContent = "";
+
+      stopSpeech();
+
+      if (!q) {
+
+        errEl.textContent = "Escribe una pregunta.";
+
+        return;
+
+      }
+
+      btn.disabled = true;
+
+      status.textContent = forceGpt
+
+        ? "Generando informe con GPT-5 (consume tokens, puede tardar ~30 s)…"
+
+        : cloudOnly
+
+          ? "Calculando en Cloud Run (sin GPT; evita palabras informe/recomienda)…"
+
+          : "Consultando Adalam…";
+
+      out.value = "";
+
+      try {
+
+        const body = { question: q };
+
+        if (forceGpt) body.force_analysis = true;
+
+        const res = await fetch(API + "/ask", {
+
+          method: "POST",
+
+          headers: { "Content-Type": "application/json" },
+
+          body: JSON.stringify(body),
+
+        });
+
+        const data = await res.json();
+
+        if (!res.ok) throw new Error(data.detail || JSON.stringify(data));
+
+        out.value = data.answer || "";
+
+        const mode = data.mode || "—";
+
+        const modeLabel =
+
+          mode === "cloud_only"
+
+            ? "Solo Cloud (0 tokens GPT)"
+
+            : mode === "analysis"
+
+              ? "GPT-5 (tokens)"
+
+              : mode;
+
+        status.textContent =
+
+          modeLabel +
+
+          " · intent: " +
+
+          (data.intent || "—") +
+
+          " · " +
+
+          (data.pipeline || "") +
+
+          " · archivos: " +
+
+          (data.files_used || []).join(", ");
+
+        if (document.getElementById("autoSpeak").checked) {
+
+          speakAnswer(out.value);
+
+          status.textContent += " · Leyendo…";
+
+        }
+
+      } catch (e) {
+
+        errEl.textContent = String(e.message || e);
+
+      } finally {
+
+        btn.disabled = false;
+
+      }
+
+    });
+
+
+
+    loadContext();
+
   </script>
+
 </body>
+
 </html>
+
