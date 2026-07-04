@@ -8,7 +8,7 @@
 
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <title>Adalam — Consultas socioemocionales V1</title>
+  <title>Adalam — Consultas socioemocionales</title>
 
   <style>
 
@@ -182,9 +182,9 @@
 
   <div class="checks">
 
-    <label class="check"><input type="checkbox" id="cloudOnly" checked /> Preferir respuesta solo Cloud (estadística; <strong>no consume tokens GPT</strong>)</label>
+    <label class="check"><input type="checkbox" id="cloudOnly" checked /> Solo Cloud — <strong>nunca GPT</strong> (estadística; 0 tokens)</label>
 
-    <label class="check"><input type="checkbox" id="forceGpt" /> Forzar informe GPT (recomendaciones narrativas — <strong>sí consume tokens</strong>)</label>
+    <label class="check"><input type="checkbox" id="forceGpt" /> Forzar GPT — informe narrativo (<strong>sí consume tokens</strong>)</label>
 
     <label class="check"><input type="checkbox" id="autoSpeak" /> Leer respuesta en voz alta</label>
 
@@ -507,6 +507,7 @@
         const body = { question: q };
 
         if (forceGpt) body.force_analysis = true;
+        else if (cloudOnly) body.cloud_only = true;
 
         const res = await fetch(API + "/ask", {
 
