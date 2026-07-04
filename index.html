@@ -182,9 +182,11 @@
 
   <div class="checks">
 
-    <label class="check"><input type="checkbox" id="cloudOnly" checked /> Solo Cloud — <strong>nunca GPT</strong> (estadística; 0 tokens)</label>
+    <label class="check"><input type="checkbox" id="cloudOnly" checked /> <strong>Solo Cloud</strong> — estadística en Cloud Run, <strong>sin GPT</strong> (0 tokens)</label>
 
-    <label class="check"><input type="checkbox" id="forceGpt" /> Forzar GPT — informe narrativo (<strong>sí consume tokens</strong>)</label>
+    <label class="check"><input type="checkbox" id="forceGpt" /> <strong>Cloud + GPT</strong> — forzar informe narrativo con GPT-5 (<strong>consume tokens</strong>)</label>
+
+    <p class="meta" style="margin:0.35rem 0 0 1.5rem">Por defecto <strong>Solo Cloud</strong>. Marca <strong>Cloud + GPT</strong> cuando quieras informe narrativo. Si desmarcas ambos checkboxes de modo, GPT puede entrar solo cuando la pregunta pida informe o recomendaciones. Videos/enlaces: solo si la pregunta incluye <em>video</em>, <em>YouTube</em>, <em>materiales</em> o <em>material de apoyo</em>.</p>
 
     <label class="check"><input type="checkbox" id="autoSpeak" /> Leer respuesta en voz alta</label>
 
@@ -492,13 +494,13 @@
 
       status.textContent = forceGpt
 
-        ? "Generando informe con GPT-5 (consume tokens, puede tardar ~30 s)…"
+        ? "Cloud calcula + GPT-5 redacta (tokens; ~20–30 s)…"
 
         : cloudOnly
 
-          ? "Calculando en Cloud Run (sin GPT; evita palabras informe/recomienda)…"
+          ? "Solo Cloud Run (sin GPT)…"
 
-          : "Consultando Adalam…";
+          : "Automático: Cloud + GPT si la pregunta lo pide…";
 
       out.value = "";
 
